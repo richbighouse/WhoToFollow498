@@ -95,7 +95,6 @@ public class WhoToFollow{
 
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
         {
-        	
         	//Holds all the values
             ArrayList<Integer> users = new ArrayList<Integer>();
         	
@@ -104,8 +103,8 @@ public class WhoToFollow{
                  int value = values.iterator().next().get();
                  users.add(value);
             }           
-            
             Text emittedValues;
+            IntWritable newKey = new IntWritable();
             for(Integer u : users)
             {
                 String curValues = ((Integer)(-1*key.get())).toString();//values that will be emitted (starts with -key)
@@ -117,9 +116,9 @@ public class WhoToFollow{
             		}
             	}
             	
-            	key.set(u);
+            	newKey.set(u);
             	emittedValues = new Text(curValues);
-            	context.write(key,emittedValues);
+            	context.write(newKey,emittedValues);
             	//Emitting all permutations of the values ex: for key = 3 values = [1 2] 
             	//It emits Key = 1 Values = [-3 2] and Key = 2 Values = [-3 1]
             }
