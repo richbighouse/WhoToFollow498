@@ -26,35 +26,19 @@ public class WhoToFollow{
      */
     public static class AllPairsMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
 
-        public void map(Object key, Text values, Context context) throws IOException, InterruptedException {
+        public void map(Object key, Text values, Context context) throws IOException, InterruptedException 
+        {
+        	//Holds all the values
             StringTokenizer st = new StringTokenizer(values.toString());
             IntWritable user = new IntWritable(Integer.parseInt(st.nextToken()));
-            // 'friends' will store the list of friends of user 'user'
-            ArrayList<Integer> friends = new ArrayList<>();
-            // First, go through the list of all friends of user 'user' and emit 
-            // (user,-friend)
-            // 'friend1' will be used in the emitted pair
             IntWritable friend1 = new IntWritable();
-            while (st.hasMoreTokens()) {
+            
+            while (st.hasMoreTokens()) 
+            {
                 Integer friend = Integer.parseInt(st.nextToken());
-                friend1.set(-friend);
-                context.write(user, friend1);
-                friends.add(friend); // save the friends of user 'user' for later
-            }
-            // Now we can emit all (a,b) and (b,a) pairs
-            // where a!=b and a & b are friends of user 'user'.
-            // We use the same algorithm as before.
-            ArrayList<Integer> seenFriends = new ArrayList<>();
-            // The element in the pairs that will be emitted.
-            IntWritable friend2 = new IntWritable();
-            for (Integer friend : friends) {
                 friend1.set(friend);
-                for (Integer seenFriend : seenFriends) {
-                    friend2.set(seenFriend);
-                    context.write(friend1, friend2);
-                    context.write(friend2, friend1);
-                }
-                seenFriends.add(friend1.get());
+                //emit all (friend, user) pair
+                context.write(friend1,user);
             }
         }
     }
@@ -108,8 +92,41 @@ public class WhoToFollow{
             }
         }
 
+        public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
+        {
+        	//Holds all the values
+            StringTokenizer st = new StringTokenizer(values.toString());
+            String friend = ("-"+st.nextToken());//appending a - in front because the key is already being followed by its values
+                        
+            ArrayList<String> users = new ArrayList<String>();
+            while (st.hasMoreTokens()) 
+            {
+            	users.add(st.nextToken());//doing this to work with an arrayList
+            }
+            
+            Text emittedValues;
+            for(String u : users)
+            {
+                String curValues = friend;//values that will be emitted (starts with -key)
+            	for (String u2 : users)
+            	{
+            		if(!u.equals(u2))
+            		{
+            			curValues += " " + u2;
+            		}
+            	}
+            	
+            	key.set(Integer.parseInt(u));
+            	emittedValues = new Text(curValues);
+            	context.write(key,emittedValues);
+            	//Emitting all permutations of the values ex: for key = 3 values = [1 2] 
+            	//It emits Key = 1 Values = [-3 2] and Key = 2 Values = [-3 1]
+            }
+        }
+        
         // The reduce method       
-        public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+  /*      public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
+        {
             IntWritable user = key;
             // 'existingFriends' will store the friends of user 'user'
             // (the negative values in 'values').
@@ -117,7 +134,8 @@ public class WhoToFollow{
             // 'recommendedUsers' will store the list of user ids recommended
             // to user 'user'
             ArrayList<Integer> recommendedUsers = new ArrayList<>();
-            while (values.iterator().hasNext()) {
+            while (values.iterator().hasNext()) 
+            {
                 int value = values.iterator().next().get();
                 if (value > 0) {
                     recommendedUsers.add(value);
@@ -163,6 +181,7 @@ public class WhoToFollow{
             Text result = new Text(sb.toString());
             context.write(user, result);
         }
+*/
     }
 
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
@@ -173,8 +192,31 @@ public class WhoToFollow{
         job.setReducerClass(CountReducer.class);
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
-        FileInputFormat.addInputPath(job, new Path(args[0]));
-        FileOutputFormat.setOutputPath(job, new Path(args[1]));
+        
+        Path inputPath;
+        Path outputPath;
+        if(args.length < 1)
+        {
+        	//Has to be the absolute path of a file on your drive
+        	inputPath = new Path("file:///home//epar//input//Test"); //Takes the Test file in the src if no args are specified
+        	//has to be the absolute path of a non-existing directory on your drive
+        	outputPath = new Path("file:///home//epar//Test");
+        }
+        else
+        {
+        	inputPath = new Path(args[0]);
+        	if(args.length < 2)
+        	{
+        		outputPath = new Path("file:///Output");
+        	}
+        	else
+        	{
+        		outputPath = new Path(args[1]);
+        	}
+        }
+        FileInputFormat.addInputPath(job,inputPath);
+        FileOutputFormat.setOutputPath(job,outputPath);
+
         System.exit(job.waitForCompletion(true) ? 0 : 1);
     }
 
