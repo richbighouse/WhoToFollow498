@@ -24,9 +24,9 @@ public class WhoToFollow{
     /**
      * *****************
      */
-    public static class AllPairsMapper extends Mapper<Object, Text, IntWritable, IntWritable> {
-
-        public void map(Object key, Text values, Context context) throws IOException, InterruptedException 
+    public static class AllPairsMapper extends Mapper<Object, Text, IntWritable, IntWritable>
+    {
+    	public void map(Object key, Text values, Context context) throws IOException, InterruptedException 
         {
         	//Holds all the values
             StringTokenizer st = new StringTokenizer(values.toString());
@@ -90,39 +90,40 @@ public class WhoToFollow{
                 // Recommendation was not found!
                 return null;
             }
+
         }
 
         public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
         {
+        	
         	//Holds all the values
-            StringTokenizer st = new StringTokenizer(values.toString());
-            String friend = ("-"+st.nextToken());//appending a - in front because the key is already being followed by its values
-                        
-            ArrayList<String> users = new ArrayList<String>();
-            while (st.hasMoreTokens()) 
+            ArrayList<Integer> users = new ArrayList<Integer>();
+        	
+            while (values.iterator().hasNext()) 
             {
-            	users.add(st.nextToken());//doing this to work with an arrayList
-            }
+                 int value = values.iterator().next().get();
+                 users.add(value);
+            }           
             
             Text emittedValues;
-            for(String u : users)
+            for(Integer u : users)
             {
-                String curValues = friend;//values that will be emitted (starts with -key)
-            	for (String u2 : users)
+                String curValues = ((Integer)(-1*key.get())).toString();//values that will be emitted (starts with -key)
+            	for (Integer u2 : users)
             	{
             		if(!u.equals(u2))
             		{
-            			curValues += " " + u2;
+            			curValues += " " + u2.toString();
             		}
             	}
             	
-            	key.set(Integer.parseInt(u));
+            	key.set(u);
             	emittedValues = new Text(curValues);
             	context.write(key,emittedValues);
             	//Emitting all permutations of the values ex: for key = 3 values = [1 2] 
             	//It emits Key = 1 Values = [-3 2] and Key = 2 Values = [-3 1]
             }
-        }
+        }   
         
         // The reduce method       
   /*      public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
@@ -193,6 +194,7 @@ public class WhoToFollow{
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
         
+                
         Path inputPath;
         Path outputPath;
         if(args.length < 1)
