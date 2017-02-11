@@ -5,6 +5,7 @@ import java.util.StringTokenizer;
 import java.util.function.Predicate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.hdfs.tools.GetConf;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -123,102 +124,60 @@ public class WhoToFollow{
             	//It emits Key = 1 Values = [-3 2] and Key = 2 Values = [-3 1]
             }
         }   
-        
-        // The reduce method       
-  /*      public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
-        {
-            IntWritable user = key;
-            // 'existingFriends' will store the friends of user 'user'
-            // (the negative values in 'values').
-            ArrayList<Integer> existingFriends = new ArrayList();
-            // 'recommendedUsers' will store the list of user ids recommended
-            // to user 'user'
-            ArrayList<Integer> recommendedUsers = new ArrayList<>();
-            while (values.iterator().hasNext()) 
-            {
-                int value = values.iterator().next().get();
-                if (value > 0) {
-                    recommendedUsers.add(value);
-                } else {
-                    existingFriends.add(value);
-                }
-            }
-            // 'recommendedUsers' now contains all the positive values in 'values'.
-            // We need to remove from it every value -x where x is in existingFriends.
-            // See javadoc on Predicate: https://docs.oracle.com/javase/8/docs/api/java/util/function/Predicate.html
-            for (final Integer friend : existingFriends) {
-                recommendedUsers.removeIf(new Predicate<Integer>() {
-                    @Override
-                    public boolean test(Integer t) {
-                        return t.intValue() == -friend.intValue();
-                    }
-                });
-            }
-            ArrayList<Recommendation> recommendations = new ArrayList<>();
-            // Builds the recommendation array
-            for (Integer userId : recommendedUsers) {
-                Recommendation p = Recommendation.find(userId, recommendations);
-                if (p == null) {
-                    recommendations.add(new Recommendation(userId));
-                } else {
-                    p.addCommonFriend();
-                }
-            }
-            // Sorts the recommendation array
-            // See javadoc on Comparator at https://docs.oracle.com/javase/8/docs/api/java/util/Comparator.html
-            recommendations.sort(new Comparator<Recommendation>() {
-                @Override
-                public int compare(Recommendation t, Recommendation t1) {
-                    return -Integer.compare(t.getNCommonFriends(), t1.getNCommonFriends());
-                }
-            });
-            // Builds the output string that will be emitted
-            StringBuffer sb = new StringBuffer(""); // Using a StringBuffer is more efficient than concatenating strings
-            for (int i = 0; i < recommendations.size() && i < 10; i++) {
-                Recommendation p = recommendations.get(i);
-                sb.append(p.toString() + " ");
-            }
-            Text result = new Text(sb.toString());
-            context.write(user, result);
-        }
-*/
     }
 
-    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException {
-        Configuration conf = new Configuration();
-        Job job = Job.getInstance(conf, "people you may know");
+    public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException 
+    {
+        //First map-reduce job
+    	Configuration conf = new Configuration();
+        Job job = Job.getInstance(conf, "Who to follow 1st run");
         job.setJarByClass(WhoToFollow.class);
         job.setMapperClass(AllPairsMapper.class);
         job.setReducerClass(CountReducer.class);
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
-        
                 
-        Path inputPath;
-        Path outputPath;
+        Path inputPath;//is the input path of the FILE
+        Path finalOutputPath; //is the final output after all map-reduce jobs
+        Path tempPath = new Path("file:///home//epar//input//Temp"); //used to feed output of first map-reduce job to the 2nd
+        
         if(args.length < 1)
         {
         	//Has to be the absolute path of a file on your drive
         	inputPath = new Path("file:///home//epar//input//Test"); //Takes the Test file in the src if no args are specified
+        	
         	//has to be the absolute path of a non-existing directory on your drive
-        	outputPath = new Path("file:///home//epar//Test");
+        	finalOutputPath = new Path("file:///home//epar//FinalOutput");
         }
         else
         {
         	inputPath = new Path(args[0]);
         	if(args.length < 2)
         	{
-        		outputPath = new Path("file:///Output");
+        		finalOutputPath = new Path("file:///home//epar//FinalOutput");
         	}
         	else
         	{
-        		outputPath = new Path(args[1]);
+        		finalOutputPath = new Path("file:///home//epar//FinalOutput");
         	}
         }
         FileInputFormat.addInputPath(job,inputPath);
-        FileOutputFormat.setOutputPath(job,outputPath);
+        FileOutputFormat.setOutputPath(job,tempPath);
 
-        System.exit(job.waitForCompletion(true) ? 0 : 1);
+        job.waitForCompletion(true);
+
+        //Second job of map-reduce
+        Job job2 = Job.getInstance(conf);
+        job2.setJarByClass(WhoToFollow.class);
+        job2.setJobName("Who to follow pt2");
+        job2.setMapperClass(AllPairsMapper.class);
+        job2.setReducerClass(CountReducer.class);
+        job2.setOutputKeyClass(IntWritable.class);
+        job2.setOutputValueClass(IntWritable.class);
+        FileInputFormat.addInputPath(job2,tempPath);
+        FileOutputFormat.setOutputPath(job2,finalOutputPath);
+
+        System.exit(job2.waitForCompletion(true) ? 0 : 1);
     }
 
 }
