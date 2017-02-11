@@ -25,7 +25,7 @@ public class WhoToFollow{
     /**
      * *****************
      */
-    public static class AllPairsMapper extends Mapper<Object, Text, IntWritable, IntWritable>
+    public static class MapperOne extends Mapper<Object, Text, IntWritable, IntWritable>
     {
     	public void map(Object key, Text values, Context context) throws IOException, InterruptedException 
         {
@@ -44,7 +44,26 @@ public class WhoToFollow{
         }
     }
 
-    public static class CountReducer extends Reducer<IntWritable, IntWritable, IntWritable, Text> {
+    public static class MapperTwo extends Mapper<Object, Text, IntWritable, IntWritable>
+    {
+    	public void map(Object key, Text values, Context context) throws IOException, InterruptedException 
+        {
+        	//Holds all the values
+            StringTokenizer st = new StringTokenizer(values.toString());
+            IntWritable user = new IntWritable(Integer.parseInt(st.nextToken()));
+            IntWritable friend1 = new IntWritable();
+            
+            while (st.hasMoreTokens()) 
+            {
+                Integer friend = Integer.parseInt(st.nextToken());
+                friend1.set(friend);
+                //emit all (friend, user) pair
+                context.write(friend1,user);
+            }
+        }
+    }
+    
+    public static class ReducerOne extends Reducer<IntWritable, IntWritable, IntWritable, Text> {
 
         // A private class to describe a recommendation.
         // A recommendation has a friend id and a number of friends in common.
@@ -126,20 +145,54 @@ public class WhoToFollow{
         }   
     }
 
+    public static class ReducerTwo extends Reducer<IntWritable, IntWritable, IntWritable, Text> 
+    {
+        public void reduce(IntWritable key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException 
+        {
+        	//Holds all the values
+            ArrayList<Integer> users = new ArrayList<Integer>();
+        	
+            while (values.iterator().hasNext()) 
+            {
+                 int value = values.iterator().next().get();
+                 users.add(value);
+            }           
+            Text emittedValues;
+            IntWritable newKey = new IntWritable();
+            for(Integer u : users)
+            {
+                String curValues = ((Integer)(-1*key.get())).toString();//values that will be emitted (starts with -key)
+            	for (Integer u2 : users)
+            	{
+            		if(!u.equals(u2))
+            		{
+            			curValues += " " + u2.toString();
+            		}
+            	}
+            	
+            	newKey.set(u);
+            	emittedValues = new Text(curValues);
+            	context.write(newKey,emittedValues);
+            	//Emitting all permutations of the values ex: for key = 3 values = [1 2] 
+            	//It emits Key = 1 Values = [-3 2] and Key = 2 Values = [-3 1]
+            }
+        }   
+
+    }
     public static void main(String[] args) throws IOException, InterruptedException, ClassNotFoundException 
     {
         //First map-reduce job
     	Configuration conf = new Configuration();
         Job job = Job.getInstance(conf, "Who to follow 1st run");
         job.setJarByClass(WhoToFollow.class);
-        job.setMapperClass(AllPairsMapper.class);
-        job.setReducerClass(CountReducer.class);
+        job.setMapperClass(MapperOne.class);
+        job.setReducerClass(ReducerOne.class);
         job.setOutputKeyClass(IntWritable.class);
         job.setOutputValueClass(IntWritable.class);
                 
         Path inputPath;//is the input path of the FILE
         Path finalOutputPath; //is the final output after all map-reduce jobs
-        Path tempPath = new Path("file:///home//epar//input//Temp"); //used to feed output of first map-reduce job to the 2nd
+        Path tempPath = new Path("file:///home//epar//Temp"); //used to feed output of first map-reduce job to the 2nd
         
         if(args.length < 1)
         {
@@ -170,8 +223,8 @@ public class WhoToFollow{
         Job job2 = Job.getInstance(conf);
         job2.setJarByClass(WhoToFollow.class);
         job2.setJobName("Who to follow pt2");
-        job2.setMapperClass(AllPairsMapper.class);
-        job2.setReducerClass(CountReducer.class);
+        job2.setMapperClass(MapperTwo.class);
+        job2.setReducerClass(ReducerTwo.class);
         job2.setOutputKeyClass(IntWritable.class);
         job2.setOutputValueClass(IntWritable.class);
         FileInputFormat.addInputPath(job2,tempPath);
