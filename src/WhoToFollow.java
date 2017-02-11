@@ -1,11 +1,13 @@
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.StringTokenizer;
 import java.util.function.Predicate;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.tools.GetConf;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -191,28 +193,62 @@ public class WhoToFollow{
         job.setOutputValueClass(IntWritable.class);
                 
         Path inputPath;//is the input path of the FILE
-        Path finalOutputPath; //is the final output after all map-reduce jobs
-        Path tempPath = new Path("file:///home//epar//Temp"); //used to feed output of first map-reduce job to the 2nd
-        
+        Path finalOutputPath = null; //is the final output after all map-reduce jobs
+        Path tempPath = null; //used to feed output of first map-reduce job to the 2nd
+      
         if(args.length < 1)
         {
-        	//Has to be the absolute path of a file on your drive
-        	inputPath = new Path("file:///home//epar//input//Test"); //Takes the Test file in the src if no args are specified
-        	
-        	//has to be the absolute path of a non-existing directory on your drive
-        	finalOutputPath = new Path("file:///home//epar//FinalOutput");
+        	inputPath = new Path("file:///home//rich//dev//WhoToFollow498//input.txt"); 
+            File tempFolder = new File("tempFolder");
+            if(!tempFolder.exists()){
+    			boolean result = false;
+    			try{
+    	    		result = tempFolder.mkdir();
+    			} catch (SecurityException se){
+    				System.out.println("OH NOES YOU CANT CREATE A FOLDER HERE!");
+    			}
+    			if(result){
+    				System.out.println("dir created");
+    			}
+        	}
+    		tempPath = new Path(tempFolder.getAbsolutePath());
+    		FileUtils.deleteDirectory(tempFolder);    
+    		
+            File finalFolder = new File("finalFolder");
+            if(!finalFolder.exists()){
+    			boolean result = false;
+    			try{
+    	    		result = finalFolder.mkdir();
+    			} catch (SecurityException se){
+    				System.out.println("OH NOES YOU CANT CREATE A FOLDER HERE!");
+    			}
+    			if(result){
+    				System.out.println("dir created");
+    			}
+        	}
+    		finalOutputPath = new Path(finalFolder.getAbsolutePath());
+    		FileUtils.deleteDirectory(finalFolder);    	
         }
         else
         {
         	inputPath = new Path(args[0]);
-        	if(args.length < 2)
-        	{
-        		finalOutputPath = new Path("file:///home//epar//FinalOutput");
+        	finalOutputPath = new Path(args[1]);
+    		String tempFolderString = finalOutputPath.toString().substring(0,finalOutputPath.toString().lastIndexOf("//"));
+    		File tempFolder = new File(tempFolderString);
+    		if(!tempFolder.exists()){
+    			boolean result = false;
+    			try{
+    	    		result = tempFolder.mkdir();
+    			} catch (SecurityException se){
+    				System.out.println("OH NOES YOU CANT CREATE A FOLDER HERE!");
+    			}
+    			if(result){
+    				System.out.println("dir created");
+    			}
         	}
-        	else
-        	{
-        		finalOutputPath = new Path("file:///home//epar//FinalOutput");
-        	}
+    		tempPath = new Path(tempFolder.getAbsolutePath());
+    		FileUtils.deleteDirectory(tempFolder);           	
+
         }
         FileInputFormat.addInputPath(job,inputPath);
         FileOutputFormat.setOutputPath(job,tempPath);
@@ -232,5 +268,13 @@ public class WhoToFollow{
 
         System.exit(job2.waitForCompletion(true) ? 0 : 1);
     }
+
+	private static void setTempPathRunFromConsole(Path finalOutputPath,
+			Path tempPath) {
+		int lastIndexOfSlash = finalOutputPath.toString().lastIndexOf("//");
+		String tempFolderString = finalOutputPath.toString().substring(0,finalOutputPath.toString().lastIndexOf("//"));
+		File tempFolder = new File(tempFolderString);
+	}
+    
 
 }
