@@ -228,22 +228,12 @@ public class WhoToFollow{
         {
         	inputPath = new Path(args[0]);
         	finalOutputPath = new Path(args[1]);
-    		String tempFolderString = finalOutputPath.toString().substring(0,finalOutputPath.toString().lastIndexOf("//"));
-    		File tempFolder = new File(tempFolderString);
-    		if(!tempFolder.exists()){
-    			boolean result = false;
-    			try{
-    	    		result = tempFolder.mkdir();
-    			} catch (SecurityException se){
-    				System.out.println("OH NOES YOU CANT CREATE A FOLDER HERE!");
-    			}
-    			if(result){
-    				System.out.println("dir created");
-    			}
+        	tempPath = new Path("file:///home/rich/dev/WhoToFollow498/bin/temp");
+        	File temp = new File("temp");
+        	if(temp.exists()){
+        		FileUtils.deleteDirectory(temp);
         	}
-    		tempPath = new Path(tempFolder.getAbsolutePath());
-    		FileUtils.deleteDirectory(tempFolder);           	
-
+        	
         }
         FileInputFormat.addInputPath(job,inputPath);
         FileOutputFormat.setOutputPath(job,tempPath);
