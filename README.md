@@ -20,5 +20,15 @@ $ jar cvf whotofollow.jar WhoToFollow*.class
 $ python generate.py n f > yourfile.txt
 Where n is the number of users and f is the maximum number of followers per user.
 
+6. Run the following commands to start dfs and yarn:
+$ start-dfs.sh
+$ start-yarn.sh
+
+7. To run the program locally, run the following command:
+$ hadoop jar whotofollow.jar WhoToFollow file://your/path/to/input.txt file://your/path/to/non/yet/existing/directory
+
+8. To run the program from your hdfs, run the following command:
+$ hadoop jar whotofollow.jar WhoToFollow input.txt output
+
 
 	
