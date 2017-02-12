@@ -1,0 +1,12 @@
+# WhoToFollow498
+The goal is to write an algorithm that will recommend to user X a list of people to follow Fi based on the number of followers that X and Fi have in common.
+
+Developed by Simon Houle 27194706 and Richard Grand'Maison 26145965.
+
+How to compile:
+
+1. Have Hadoop, Java, HDFS and Yarn set up as per the Getting started with Hadoop Lab. The complete instruction can be found here https://github.com/glatard/big-data-analytics-course/releases/download/0.7.1/intro.pdf.  
+2. Run the following command in your terminal to add the commons-io-2.4jar to the CLASSPATH
+	export CLASSPATH=$CLASSPATH:${HADOOP}/share/hadoop/common/lib/commons-io-2.4.jar
+
+

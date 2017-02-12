@@ -200,7 +200,7 @@ public class WhoToFollow{
     			try{
     	    		result = tempFolder.mkdir();
     			} catch (SecurityException se){
-    				System.out.println("OH NOES YOU CANT CREATE A FOLDER HERE!");
+    				System.out.println("YOU CANT CREATE A FOLDER HERE!");
     			}
     			if(result){
     				System.out.println("dir created");
