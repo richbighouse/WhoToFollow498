@@ -3,6 +3,8 @@ The goal is to write an algorithm that will recommend to user X a list of people
 
 Developed by Simon Houle 27194706 and Richard Grand'Maison 26145965.
 
+https://github.com/richbighouse/WhoToFollow498
+
 How to compile:
 
 1. Have Hadoop, Java, HDFS and Yarn set up as per the Getting started with Hadoop Lab. The complete instruction can be found here https://github.com/glatard/big-data-analytics-course/releases/download/0.7.1/intro.pdf.
@@ -25,7 +27,7 @@ $ start-dfs.sh
 $ start-yarn.sh
 
 7. To run the program locally, run the following command:
-$ hadoop jar whotofollow.jar WhoToFollow file://your/path/to/input.txt file://your/path/to/non/yet/existing/directory
+$ hadoop jar whotofollow.jar WhoToFollow file:///your/path/to/input.txt file:///your/path/to/non/yet/existing/directory
 
 8. To run the program from your hdfs, run the following command:
 $ hadoop jar whotofollow.jar WhoToFollow input.txt output
