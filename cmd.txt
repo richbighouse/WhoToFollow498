@@ -1,1 +1,0 @@
-hadoop jar whotofollow.jar WhoToFollow file:///home/rich/dev/WhoToFollow498/bin/generateOutput.txt file:///home/rich/dev/WhoToFollow498/bin/outputTestfile:///home/rich/dev/generateOutput.txt
